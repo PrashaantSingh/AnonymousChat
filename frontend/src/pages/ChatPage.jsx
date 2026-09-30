@@ -2,72 +2,65 @@ import { useEffect, useRef, useState } from "react";
 import { LogOut } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import useSocketStore from "../store/useSocketStore";
+import MessageComposer from "../components/MessageComposer";
+import MessageList from "../components/MessageList";
+import PixelButton from "../components/PixelButton";
 
 export default function Chat() {
-  const params = useParams();
+  const { chatId: routeChatId } = useParams();
   const navigate = useNavigate();
 
   const socket = useSocketStore((s) => s.socket);
   const user = useSocketStore((s) => s.user);
   const messages = useSocketStore((s) => s.privateMessages);
   const addMessage = useSocketStore((s) => s.addPrivateMessages);
-  const chatId = useSocketStore((s) => s.currentChatId);
   const connectSocket = useSocketStore((s) => s.connectSocket);
 
   const connected = useSocketStore((s) => s.isConnected);
-  const setConnected = useSocketStore((s) => s.setConnected);
   const setCurrentChatId = useSocketStore((s) => s.setCurrentChatId);
   const [input, setInput] = useState("");
 
   const bottomRef = useRef(null);
 
   const [partnerLeft, setPartnerLeft] = useState(false);
+  const activeChatId = routeChatId;
 
   useEffect(() => {
-    if (!chatId) {
+    if (!activeChatId) {
       navigate("/", { replace: true });
+      return;
     }
-    if (!socket?.connected) {
-      connectSocket();
-    }
-  }, []);
 
-  useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      connectSocket();
+      return;
+    }
 
     const receiveMessage = (message) => {
       addMessage(message);
     };
 
-    const disconnect = () => setConnected(false);
+    const partnerLeftHandler = () => setPartnerLeft(true);
 
     socket.on("RECEIVE_PRIVATE_MESSAGE", receiveMessage);
-    socket.on("partner_disconnected", disconnect);
-
-    socket.on("PARTNER_LEFT", () => {
-      setPartnerLeft(true);
-    });
+    socket.on("PARTNER_LEFT", partnerLeftHandler);
 
     return () => {
       socket.off("RECEIVE_PRIVATE_MESSAGE", receiveMessage);
-      socket.off("partner_disconnected", disconnect);
+      socket.off("PARTNER_LEFT", partnerLeftHandler);
     };
-  }, [addMessage, socket]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [activeChatId, addMessage, connectSocket, navigate, socket]);
 
   function sendMessage(e) {
     e.preventDefault();
 
     const content = input.trim();
-    if (!content || !socket) return;
+    if (!content || !socket || !activeChatId) return;
 
     const message = {
       senderId: user.userId,
       content,
-      chatId: chatId || params.chatId,
+      chatId: activeChatId,
     };
 
     socket.emit("SEND_PRIVATE_MESSAGE", message);
@@ -76,9 +69,8 @@ export default function Chat() {
   }
 
   function exitChat() {
-    console.log("exitting chat");
     setCurrentChatId(null);
-    socket?.emit("EXIT_PRIVATE_CHAT", chatId || params.chatId);
+    socket?.emit("EXIT_PRIVATE_CHAT", activeChatId);
     navigate("/", { replace: true });
   }
 
@@ -98,18 +90,22 @@ export default function Chat() {
             </span>
           </div>
 
-          <button
+          <PixelButton
             onClick={exitChat}
-            className="pixel-btn bg-red-600 text-white px-3 py-1.5 flex gap-2 items-center"
+            className="bg-red-600 text-white px-3 py-1.5 flex gap-2 items-center"
           >
             <LogOut size={16} />
             EXIT
-          </button>
+          </PixelButton>
         </div>
 
         {/* Messages */}
-        <div className="pixel-input flex-1 p-4 overflow-y-auto space-y-4 mb-3 bg-slate-950 border-4">
-          {messages.map((message, index) => {
+        <MessageList
+          partnerLeft={partnerLeft}
+          messages={messages}
+          bottomRef={bottomRef}
+          className="pixel-input flex-1 p-4 overflow-y-auto space-y-4 mb-3 bg-slate-950 border-4 scrollbar-track-slate-950 scrollbar-thin scrollbar-thumb-slate-400"
+          renderMessage={(message, index) => {
             const own = message.senderId === user.userId;
 
             return (
@@ -128,52 +124,40 @@ export default function Chat() {
                 </div>
               </div>
             );
-          })}
+          }}
+        />
 
-          {partnerLeft && (
-            <div className="flex flex-col items-center justify-center gap-6">
-              <div className="text-red-500 text-center text-2xl">
-                Chat Ended. Partner left the chat
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => navigate("/matchmaking")}
-                  className="bg-blue-500 text-white px-3 py-2"
-                >
-                  Find Another Match
-                </button>
-                <button
-                  onClick={() => navigate("/")}
-                  className="bg-orange-500 text-white px-3 py-2"
-                >
-                  Home
-                </button>
-              </div>
+        {/* {partnerLeft && (
+          <div className="flex flex-col items-center justify-center gap-6 mb-3">
+            <div className="text-red-500 text-center text-2xl">
+              Chat Ended. Partner left the chat
             </div>
-          )}
 
-          <div ref={bottomRef} />
-        </div>
+            <div className="flex gap-4">
+              <PixelButton
+                onClick={() => navigate("/matchmaking")}
+                className="bg-blue-500 text-white px-3 py-2"
+              >
+                Find Another Match
+              </PixelButton>
+              <PixelButton
+                onClick={() => navigate("/")}
+                className="bg-orange-500 text-white px-3 py-2"
+              >
+                Home
+              </PixelButton>
+            </div>
+          </div>
+        )} */}
 
         {/* Input */}
-        <form onSubmit={sendMessage} className="flex gap-2 items-center block">
-          <input
-            value={input}
-            disabled={partnerLeft}
-            onChange={(e) => setInput(e.target.value)}
-            className="pixel-input flex-1 px-3 text-white outline-none bg-slate-950 py-4 border-2 border-black disabled:cursor-not-allowed"
-            placeholder="Message..."
-          />
-
-          <button
-            type="submit"
-            disabled={!connected || !input.trim()}
-            className="pixel-btn bg-green-600 text-black font-bold px-5 disabled:opacity-50 py-4 border-2"
-          >
-            SEND
-          </button>
-        </form>
+        <MessageComposer
+          value={input}
+          onChange={setInput}
+          onSubmit={sendMessage}
+          disabled={partnerLeft || !connected}
+          inputClassName="py-4"
+        />
       </div>
     </div>
   );

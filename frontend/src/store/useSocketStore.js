@@ -58,6 +58,7 @@ const useSocketStore = create(
       isConnected: false,
       privateMessages: [],
       roomMessages: [],
+      currentRoom: null,
       isMatchingForChat: false,
       currentChatId: null,
 
@@ -66,11 +67,18 @@ const useSocketStore = create(
       },
       setIsMatchingForChat: (state) => set({ isMatchingForChat: state }),
       connectSocket: () => {
+        const existingSocket = get().socket;
+        if (existingSocket) return existingSocket;
+
         const socket = createSocketConnection(get().socketUrl, {
           auth: get().user,
         });
+
+        socket.on("connect", () => get().setConnected(true));
+        socket.on("disconnect", () => get().setConnected(false));
+        socket.on("connect_error", () => get().setConnected(false));
         set({ socket: socket });
-        get().setConnected(true);
+        return socket;
       },
       setConnected: (state) => set({ isConnected: state }),
       setDisplayName: (name) => {
@@ -87,6 +95,12 @@ const useSocketStore = create(
       },
 
       clearPrivateMessages: () => set({ privateMessages: [] }),
+      setCurrentRoom: (room) => set({ currentRoom: room }),
+      setRoomMessages: (messages) => set({ roomMessages: messages }),
+      addRoomMessage: (message) => {
+        set((state) => ({ roomMessages: [...state.roomMessages, message] }));
+      },
+      resetRoom: () => set({ currentRoom: null, roomMessages: [] }),
     }),
     {
       name: "anonymousChat",
@@ -94,6 +108,8 @@ const useSocketStore = create(
       partialize: (state) => ({
         currentChatId: state.currentChatId,
         privateMessages: state.privateMessages,
+        currentRoom: state.currentRoom,
+        roomMessages: state.roomMessages,
       }),
     },
   ),

@@ -6,30 +6,42 @@ import useSocketStore from "../store/useSocketStore";
 export default function Matchmaking() {
   const navigate = useNavigate();
 
-  const { socket, setIsMatchingForChat, setCurrentChatId, resetPrivateChat } =
-    useSocketStore();
+  const {
+    socket,
+    connectSocket,
+    setIsMatchingForChat,
+    setCurrentChatId,
+    resetPrivateChat,
+  } = useSocketStore();
   const [timer, setTimer] = useState(0);
 
-  useEffect(() => resetPrivateChat(), []);
+  useEffect(() => {
+    resetPrivateChat();
+  }, [resetPrivateChat]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      connectSocket();
+      return;
+    }
 
     const joinQueue = () => {
       socket.emit("START_CHAT_MATCHMAKING");
     };
 
-    if (!socket.connected) {
-      socket.connect();
-      socket.once("connect", joinQueue);
-    } else {
+    const matchFound = (chatId) => {
+      setCurrentChatId(chatId);
+      setIsMatchingForChat(false);
+      navigate(`/chat/${chatId}`, { replace: true });
+    };
+
+    if (socket.connected) {
       joinQueue();
+    } else {
+      socket.once("connect", joinQueue);
     }
 
-    socket.on("MATCH_FOUND", (chatId) => {
-      setCurrentChatId(chatId);
-      navigate(`/chat/${chatId}`,{replace:true});
-    });
+    socket.on("MATCH_FOUND", matchFound);
 
     const interval = setInterval(() => {
       setTimer((p) => p + 1);
@@ -39,13 +51,14 @@ export default function Matchmaking() {
       clearInterval(interval);
 
       socket.off("connect", joinQueue);
-      socket.emit("cancel_matchmaking");
+      socket.off("MATCH_FOUND", matchFound);
+      socket.emit("CANCEL_CHAT_MATCHMAKING");
     };
-  }, [socket, navigate]);
+  }, [connectSocket, navigate, setCurrentChatId, setIsMatchingForChat, socket]);
 
   const handleCancel = () => {
     socket?.emit("CANCEL_CHAT_MATCHMAKING");
-    navigate("/",{replace:true});
+    navigate("/", { replace: true });
     setIsMatchingForChat(false);
   };
 
