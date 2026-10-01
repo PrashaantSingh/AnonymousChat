@@ -96,6 +96,7 @@ export default function RoomChatPage() {
 
   function deleteRoom() {
     socket?.emit("DELETE_ROOM", roomId);
+    navigate('/')
   }
 
   function returnToRooms() {
@@ -115,7 +116,7 @@ export default function RoomChatPage() {
                 onClick={copyRoomId}
                 aria-label="Copy room ID"
                 title="Copy room ID"
-                className="p-1 text-slate-300"
+                className="p-1 text-slate-300 cursor-pointer"
               >
                 <Copy size={14} />
               </PixelButton>
@@ -150,6 +151,7 @@ export default function RoomChatPage() {
             {error}
           </p>
         )}
+
         {roomDeleted && (
           <div className="border-2 border-amber-500 bg-amber-950 text-amber-200 p-3 mb-3 flex items-center justify-between gap-3">
             <p>The room was deleted by its creator.</p>
