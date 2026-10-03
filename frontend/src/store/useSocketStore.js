@@ -1,30 +1,9 @@
 import { create } from "zustand";
 import createSocketConnection from "../socket";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { adjectives, nouns } from "../userNameData";
 
-function generateUser() {
-  const adjectives = [
-    "Shadow",
-    "Cyber",
-    "Silent",
-    "Dark",
-    "Swift",
-    "Crazy",
-    "Mystic",
-    "Neon",
-  ];
-
-  const nouns = [
-    "Wolf",
-    "Falcon",
-    "Dragon",
-    "Tiger",
-    "Ghost",
-    "Hunter",
-    "Phoenix",
-    "Storm",
-  ];
-
+function generateUser(adjectives, nouns) {
   const name1 = adjectives[Math.floor(Math.random() * adjectives.length)];
   const name2 = nouns[Math.floor(Math.random() * nouns.length)];
   const number = Math.floor(100 + Math.random() * 900);
@@ -42,7 +21,7 @@ function getUser() {
     return JSON.parse(storedUser);
   }
 
-  const user = generateUser();
+  const user = generateUser(adjectives, nouns);
 
   sessionStorage.setItem("user", JSON.stringify(user));
 
