@@ -1,6 +1,10 @@
-import { chatMatchmakingQueue, rooms, users } from "./state.js";
+import { cancelMatchmaking } from "./redis.js";
+import { rooms, users } from "./state.js";
 import { registerMatchmakingHandlers } from "./matchmaking.js";
-import { registerPrivateChatHandlers } from "./privateChat.js";
+import {
+  notifyPrivateChatStatus,
+  registerPrivateChatHandlers,
+} from "./privateChat.js";
 import { registerRoomHandlers } from "./rooms.js";
 
 const RECONNECT_GRACE_PERIOD = 15000;
@@ -42,19 +46,20 @@ export function registerConnectionHandlers(io) {
       userId,
       name,
     });
+    notifyPrivateChatStatus(io, userId, true);
 
     socket.on("disconnect", () => {
       if (users.get(userId)?.socketId !== socket.id) return;
 
       console.log("disconnected: ", socket.id);
-      const timer = setTimeout(() => {
+      notifyPrivateChatStatus(io, userId, false);
+      const timer = setTimeout(async () => {
         if (users.get(userId)?.socketId !== socket.id) return;
 
         for (const roomId of roomsForUser(userId)) {
           removeUserFromRoom(roomId);
         }
-        const queueIndex = chatMatchmakingQueue.indexOf(userId);
-        if (queueIndex !== -1) chatMatchmakingQueue.splice(queueIndex, 1);
+        await cancelMatchmaking(userId);
         removeUserFromPrivateChats();
         users.delete(userId);
         disconnectTimers.delete(userId);

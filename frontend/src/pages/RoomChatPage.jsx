@@ -23,6 +23,7 @@ export default function RoomChatPage() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [roomDeleted, setRoomDeleted] = useState(false);
+  const [roomUnavailable, setRoomUnavailable] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -33,6 +34,8 @@ export default function RoomChatPage() {
     const joined = ({ room: nextRoom, messages: nextMessages }) => {
       setCurrentRoom(nextRoom);
       setRoomMessages(nextMessages);
+      setRoomUnavailable(false);
+      setError("");
     };
     const updated = (nextRoom) => setCurrentRoom(nextRoom);
     const deleted = (deletedRoomId) => {
@@ -41,7 +44,12 @@ export default function RoomChatPage() {
         setError("");
       }
     };
-    const roomError = (message) => setError(message);
+    const roomUnavailableError = () => {
+      setRoomUnavailable(true);
+      setError("");
+      setCurrentRoom(null);
+      setRoomMessages([]);
+    };
     if (!isConnected) return;
 
     const joinRoom = () => socket.emit("JOIN_ROOM", roomId);
@@ -49,14 +57,14 @@ export default function RoomChatPage() {
     socket.on("ROOM_JOINED", joined);
     socket.on("ROOM_UPDATED", updated);
     socket.on("ROOM_DELETED", deleted);
-    socket.on("ROOM_ERROR", roomError);
+    socket.on("ROOM_ERROR", roomUnavailableError);
     socket.on("RECEIVE_ROOM_MESSAGE", addRoomMessage);
     joinRoom();
     return () => {
       socket.off("ROOM_JOINED", joined);
       socket.off("ROOM_UPDATED", updated);
       socket.off("ROOM_DELETED", deleted);
-      socket.off("ROOM_ERROR", roomError);
+      socket.off("ROOM_ERROR", roomUnavailableError);
       socket.off("RECEIVE_ROOM_MESSAGE", addRoomMessage);
     };
   }, [
@@ -96,7 +104,7 @@ export default function RoomChatPage() {
 
   function deleteRoom() {
     socket?.emit("DELETE_ROOM", roomId);
-    navigate('/')
+    navigate("/");
   }
 
   function returnToRooms() {
@@ -146,25 +154,17 @@ export default function RoomChatPage() {
             </PixelButton>
           </div>
         </header>
-        {error && (
+        {error && !roomUnavailable && (
           <p className="border-2 border-red-500 bg-red-950 text-red-300 p-3 mb-3">
             {error}
           </p>
         )}
 
-        {roomDeleted && (
-          <div className="border-2 border-amber-500 bg-amber-950 text-amber-200 p-3 mb-3 flex items-center justify-between gap-3">
-            <p>The room was deleted by its creator.</p>
-            <PixelButton
-              onClick={returnToRooms}
-              className="bg-amber-500 text-black px-3 py-1.5 whitespace-nowrap"
-            >
-              BACK TO ROOMS
-            </PixelButton>
-          </div>
-        )}
-
         <MessageList
+          roomDeleted={roomDeleted}
+          roomUnavailable={roomUnavailable}
+          onRoomDeleted={returnToRooms}
+          onRoomUnavailable={returnToRooms}
           messages={messages}
           bottomRef={bottomRef}
           className="pixel-input flex-1 p-4 overflow-y-auto space-y-3 mb-3 bg-slate-950 border-4 scrollbar-track-slate-950 scrollbar-thin scrollbar-thumb-slate-400"

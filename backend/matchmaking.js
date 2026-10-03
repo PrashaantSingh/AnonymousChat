@@ -1,17 +1,27 @@
 import crypto from "node:crypto";
-import { activeChats, chatMatchmakingQueue, users } from "./state.js";
+import { activeChats, users } from "./state.js";
+import { cancelMatchmaking, startMatchmaking } from "./redis.js";
 
 export function registerMatchmakingHandlers({ io, socket, userId, name }) {
-  socket.on("START_CHAT_MATCHMAKING", () => {
+  socket.on("START_CHAT_MATCHMAKING", async () => {
     console.log(name, " started matchmaking");
-    if (chatMatchmakingQueue.includes(userId)) return;
+    let waitingUserId;
+    do {
+      const result = await startMatchmaking(userId);
+      if (result.alreadyQueued) return;
+      waitingUserId = result.waitingUserId;
 
-    let waitingUserId = chatMatchmakingQueue.shift();
-    while (waitingUserId && !users.has(waitingUserId)) {
-      waitingUserId = chatMatchmakingQueue.shift();
-    }
+      if (!waitingUserId) break;
+      const waitingUser = users.get(waitingUserId);
+      if (!waitingUser) {
+        await cancelMatchmaking(waitingUserId);
+        waitingUserId = undefined;
+      }
+    } while (!waitingUserId);
 
     if (waitingUserId) {
+      const waitingUser = users.get(waitingUserId);
+
       const chatId = crypto.randomUUID();
       activeChats.set(chatId, {
         users: [waitingUserId, userId],
@@ -19,24 +29,20 @@ export function registerMatchmakingHandlers({ io, socket, userId, name }) {
 
       console.log(
         "match found: ",
-        users.get(waitingUserId).userName,
+        waitingUser.userName,
         " X ",
         users.get(userId).userName,
       );
 
-      io.to(users.get(waitingUserId).socketId).emit("MATCH_FOUND", chatId);
+      io.to(waitingUser.socketId).emit("MATCH_FOUND", chatId);
       io.to(users.get(userId).socketId).emit("MATCH_FOUND", chatId);
       return;
     }
 
     console.log("waiting..");
-    chatMatchmakingQueue.push(userId);
-    console.log(chatMatchmakingQueue.length);
   });
 
-  socket.on("CANCEL_CHAT_MATCHMAKING", () => {
-    const index = chatMatchmakingQueue.indexOf(userId);
-    if (index !== -1) chatMatchmakingQueue.splice(index, 1);
-    console.log(chatMatchmakingQueue.length);
+  socket.on("CANCEL_CHAT_MATCHMAKING", async () => {
+    await cancelMatchmaking(userId);
   });
 }

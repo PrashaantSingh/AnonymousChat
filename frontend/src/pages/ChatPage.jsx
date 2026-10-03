@@ -23,6 +23,8 @@ export default function Chat() {
   const bottomRef = useRef(null);
 
   const [partnerLeft, setPartnerLeft] = useState(false);
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerOnline, setPartnerOnline] = useState(false);
   const activeChatId = routeChatId;
 
   useEffect(() => {
@@ -40,22 +42,73 @@ export default function Chat() {
       addMessage(message);
     };
 
-    const partnerLeftHandler = () => setPartnerLeft(true);
+    const partnerLeftHandler = ({ chatId } = {}) => {
+      if (chatId && chatId !== activeChatId) return;
+      setPartnerLeft(true);
+      setCurrentChatId(null);
+    };
+
+    const chatStatusHandler = ({
+      chatId,
+      active,
+      partnerName: nextPartnerName,
+      partnerOnline: nextPartnerOnline,
+    } = {}) => {
+      if (chatId !== activeChatId) return;
+
+      if (active) {
+        setPartnerName(nextPartnerName || "");
+        setPartnerOnline(Boolean(nextPartnerOnline));
+        return;
+      }
+
+      setPartnerLeft(true);
+      setPartnerOnline(false);
+      setCurrentChatId(null);
+    };
+
+    const partnerStatusHandler = ({ chatId, online } = {}) => {
+      if (chatId !== activeChatId) return;
+      setPartnerOnline(Boolean(online));
+    };
+
+    const requestChatStatus = () => {
+      socket.emit("GET_PRIVATE_CHAT_STATUS", activeChatId);
+    };
 
     socket.on("RECEIVE_PRIVATE_MESSAGE", receiveMessage);
     socket.on("PARTNER_LEFT", partnerLeftHandler);
+    socket.on("PRIVATE_CHAT_STATUS", chatStatusHandler);
+    socket.on("PARTNER_STATUS", partnerStatusHandler);
+
+    if (connected) {
+      requestChatStatus();
+    } else {
+      socket.once("connect", requestChatStatus);
+    }
 
     return () => {
       socket.off("RECEIVE_PRIVATE_MESSAGE", receiveMessage);
       socket.off("PARTNER_LEFT", partnerLeftHandler);
+      socket.off("PRIVATE_CHAT_STATUS", chatStatusHandler);
+      socket.off("PARTNER_STATUS", partnerStatusHandler);
+      socket.off("connect", requestChatStatus);
     };
-  }, [activeChatId, addMessage, connectSocket, navigate, socket]);
+  }, [
+    activeChatId,
+    addMessage,
+    connected,
+    connectSocket,
+    navigate,
+    setCurrentChatId,
+    socket,
+  ]);
 
   function sendMessage(e) {
     e.preventDefault();
 
     const content = input.trim();
-    if (!content || !socket || !activeChatId) return;
+    if (!content || partnerLeft || !socket || !activeChatId) return;
 
     const message = {
       senderId: user.userId,
@@ -80,13 +133,15 @@ export default function Chat() {
         {/* Header */}
         <div className="flex justify-between items-center border-b-2 border-black pb-3 mb-3">
           <div>
-            <h1 className="text-xl font-bold">ANONYMOUS CHAT</h1>
+            <h1 className="text-xl font-bold">
+              {partnerName ? `CHAT WITH ${partnerName}` : "ANONYMOUS CHAT"}
+            </h1>
             <span
               className={`text-xs font-bold ${
-                connected ? "text-green-400" : "text-red-500"
+                partnerOnline ? "text-green-400" : "text-red-500"
               }`}
             >
-              {connected ? "CONNECTED" : "DISCONNECTED"}
+              {partnerOnline ? "ONLINE" : "OFFLINE"}
             </span>
           </div>
 

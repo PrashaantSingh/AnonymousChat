@@ -62,7 +62,7 @@ export function registerRoomHandlers({ io, socket, userId, name }) {
       senderId: "system",
       senderName: "SYSTEM",
       type: "system",
-      content: `${name} joined the room.`,
+      content: `${name} created the room.`,
     });
 
     socket.emit("ROOM_JOINED", {
@@ -118,7 +118,7 @@ export function registerRoomHandlers({ io, socket, userId, name }) {
       return;
     }
 
-    io.to(normalizedRoomId).emit("ROOM_DELETED", normalizedRoomId);
+    socket.to(normalizedRoomId).emit("ROOM_DELETED", normalizedRoomId);
     rooms.delete(normalizedRoomId);
     io.in(normalizedRoomId).socketsLeave(normalizedRoomId);
   });
