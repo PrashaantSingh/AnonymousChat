@@ -9,6 +9,10 @@ body {
   -webkit-font-smoothing: none;
 }
 
+button {
+  cursor: pointer;
+}
+
 h1 {
   color: rgb(240, 226, 247);
 }
