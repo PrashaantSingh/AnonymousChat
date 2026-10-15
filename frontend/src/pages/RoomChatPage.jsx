@@ -5,6 +5,7 @@ import useSocketStore from "../store/useSocketStore";
 import MessageComposer from "../components/MessageComposer";
 import MessageList from "../components/MessageList";
 import PixelButton from "../components/PixelButton";
+import RoomMessage from "../components/RoomMessage";
 
 export default function RoomChatPage() {
   const { roomId } = useParams();
@@ -71,8 +72,6 @@ export default function RoomChatPage() {
     addRoomMessage,
     connectSocket,
     isConnected,
-    navigate,
-    resetRoom,
     roomId,
     setCurrentRoom,
     setRoomMessages,
@@ -113,7 +112,7 @@ export default function RoomChatPage() {
   }
 
   return (
-    <div className="flex justify-center items-center bg-slate-900 min-h-screen px-3">
+    <div className="flex justify-center items-center bg-slate-950 min-h-screen px-3">
       <div className="w-full max-w-3xl h-[90vh] pixel-panel p-4 flex flex-col bg-slate-800">
         <header className="flex justify-between items-center border-b-2 border-black pb-3 mb-3 gap-3">
           <div className="min-w-0">
@@ -169,32 +168,11 @@ export default function RoomChatPage() {
           bottomRef={bottomRef}
           className="pixel-input flex-1 p-4 overflow-y-auto space-y-3 mb-3 bg-slate-950 border-4 scrollbar-track-slate-950 scrollbar-thin scrollbar-thumb-slate-400"
           renderMessage={(message, index) =>
-            message.type === "system" ? (
-              <div
-                key={`${message.senderId}-${index}`}
-                className="text-center text-sm text-slate-400 py-1"
-              >
-                {message.content}
-              </div>
-            ) : (
-              <div
-                key={`${message.senderId}-${index}`}
-                className={`flex ${message.senderId === user.userId ? "justify-end" : "justify-start"}`}
-              >
-                <div>
-                  <p className="text-xs text-purple-400 p-1">
-                    {message.senderId === user.userId
-                      ? "> You"
-                      : "> " + message.senderName}
-                  </p>
-                  <div
-                    className={`inline-block px-3 py-2 border-2 border-black max-w-md ${message.senderId === user.userId ? "bg-slate-700 text-white" : "bg-slate-900 text-green-400"}`}
-                  >
-                    {message.content}
-                  </div>
-                </div>
-              </div>
-            )
+            <RoomMessage
+              key={`${message.senderId}-${index}`}
+              message={message}
+              userId={user.userId}
+            />
           }
         />
         <MessageComposer

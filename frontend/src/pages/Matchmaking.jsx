@@ -6,13 +6,13 @@ import useSocketStore from "../store/useSocketStore";
 export default function Matchmaking() {
   const navigate = useNavigate();
 
-  const {
-    socket,
-    connectSocket,
-    setIsMatchingForChat,
-    setCurrentChatId,
-    resetPrivateChat,
-  } = useSocketStore();
+  const socket = useSocketStore((state) => state.socket);
+  const connectSocket = useSocketStore((state) => state.connectSocket);
+  const setIsMatchingForChat = useSocketStore(
+    (state) => state.setIsMatchingForChat,
+  );
+  const setCurrentChatId = useSocketStore((state) => state.setCurrentChatId);
+  const resetPrivateChat = useSocketStore((state) => state.resetPrivateChat);
   const [timer, setTimer] = useState(0);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function Matchmaking() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-slate-950">
+    <div className="flex justify-center items-center min-h-screen bg-slate-950">
       <div className="w-full max-w-sm pixel-panel p-6 text-center bg-slate-800">
         <div className="inline-flex p-3 bg-slate-900 border-2 border-black mb-4 shadow-[inset_2px_2px_0px_0px_rgba(0,0,0,1)]">
           <Search size={32} className="text-indigo-400 animate-pulse" />

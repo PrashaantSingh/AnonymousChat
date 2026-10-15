@@ -128,8 +128,8 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex justify-center items-center bg-slate-900 min-h-screen h-screen">
-      <div className="w-full max-w-3xl h-[90vh] pixel-panel p-4 flex flex-col bg-slate-800 border-2">
+    <div className="flex justify-center items-center bg-slate-950 min-h-screen h-screen">
+      <div className="w-full max-w-3xl h-[90vh] pixel-panel p-4 flex flex-col bg-slate-800">
         {/* Header */}
         <div className="flex justify-between items-center border-b-2 border-black pb-3 mb-3">
           <div>
@@ -147,7 +147,7 @@ export default function Chat() {
 
           <PixelButton
             onClick={exitChat}
-            className="bg-red-600 text-white px-3 py-1.5 flex gap-2 items-center"
+            className="bg-red-600 text-white px-3 py-1.5 flex gap-2 items-center cursor-pointer"
           >
             <LogOut size={16} />
             EXIT
@@ -181,29 +181,6 @@ export default function Chat() {
             );
           }}
         />
-
-        {/* {partnerLeft && (
-          <div className="flex flex-col items-center justify-center gap-6 mb-3">
-            <div className="text-red-500 text-center text-2xl">
-              Chat Ended. Partner left the chat
-            </div>
-
-            <div className="flex gap-4">
-              <PixelButton
-                onClick={() => navigate("/matchmaking")}
-                className="bg-blue-500 text-white px-3 py-2"
-              >
-                Find Another Match
-              </PixelButton>
-              <PixelButton
-                onClick={() => navigate("/")}
-                className="bg-orange-500 text-white px-3 py-2"
-              >
-                Home
-              </PixelButton>
-            </div>
-          </div>
-        )} */}
 
         {/* Input */}
         <MessageComposer

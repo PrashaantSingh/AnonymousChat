@@ -5,8 +5,13 @@ import { useNavigate } from "react-router-dom";
 import PixelButton from "../components/PixelButton";
 
 export default function Home() {
-  const { connectSocket, user, isConnected, setIsMatchingForChat, socket } =
-    useSocketStore();
+  const connectSocket = useSocketStore((state) => state.connectSocket);
+  const user = useSocketStore((state) => state.user);
+  const isConnected = useSocketStore((state) => state.isConnected);
+  const setIsMatchingForChat = useSocketStore(
+    (state) => state.setIsMatchingForChat,
+  );
+  const socket = useSocketStore((state) => state.socket);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,7 +33,7 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-center px-4">
       {/* Main Card */}
-      <div className="w-full max-w-md border-2 border-black bg-slate-800 p-6 shadow-[6px_6px_0_0_#000]">
+      <div className="pixel-panel w-full max-w-md bg-slate-800 p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 border-b-2 border-black pb-3">
           <h1 className="text-2xl font-bold text-white uppercase">

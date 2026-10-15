@@ -39,7 +39,7 @@ export function registerRoomHandlers({ io, socket, userId, name }) {
     io.to(roomId).emit("ROOM_UPDATED", getRoomSummary(room));
   }
 
-  socket.on("CREATE_ROOM", ({ name: roomName } = {}) => {
+  function createRoom({ name: roomName } = {}) {
     const normalizedRoomName =
       typeof roomName === "string" ? roomName.trim() : "";
     if (!normalizedRoomName) {
@@ -69,17 +69,17 @@ export function registerRoomHandlers({ io, socket, userId, name }) {
       room: getRoomSummary(room),
       messages: room.messages,
     });
-  });
+  }
 
-  socket.on("GET_MY_ROOMS", () => {
+  function getMyRooms() {
     const ownedRooms = [...rooms.values()]
       .filter((room) => room.creatorId === userId && room.members.size > 0)
       .map(getRoomSummary);
 
     socket.emit("MY_ROOMS", ownedRooms);
-  });
+  }
 
-  socket.on("JOIN_ROOM", (roomId) => {
+  function joinRoom(roomId) {
     const normalizedRoomId = typeof roomId === "string" ? roomId.trim() : "";
     const room = rooms.get(normalizedRoomId);
     if (!room) {
@@ -100,9 +100,9 @@ export function registerRoomHandlers({ io, socket, userId, name }) {
       messages: room.messages,
     });
     io.to(normalizedRoomId).emit("ROOM_UPDATED", getRoomSummary(room));
-  });
+  }
 
-  socket.on("DELETE_ROOM", (roomId) => {
+  function deleteRoom(roomId) {
     const normalizedRoomId = typeof roomId === "string" ? roomId.trim() : "";
     const room = rooms.get(normalizedRoomId);
     if (!room) {
@@ -121,18 +121,16 @@ export function registerRoomHandlers({ io, socket, userId, name }) {
     socket.to(normalizedRoomId).emit("ROOM_DELETED", normalizedRoomId);
     rooms.delete(normalizedRoomId);
     io.in(normalizedRoomId).socketsLeave(normalizedRoomId);
-  });
+  }
 
-  socket.on("LEAVE_ROOM", removeUserFromRoom);
-
-  socket.on("SEND_ROOM_MESSAGE", ({ roomId, content } = {}) => {
+  function sendRoomMessage({ roomId, content } = {}) {
     const normalizedRoomId = typeof roomId === "string" ? roomId.trim() : "";
+    const normalizedContent = typeof content === "string" ? content.trim() : "";
     const room = rooms.get(normalizedRoomId);
     if (
       !room ||
       !room.members.has(userId) ||
-      typeof content !== "string" ||
-      !content.trim()
+      !normalizedContent
     ) {
       return;
     }
@@ -140,12 +138,19 @@ export function registerRoomHandlers({ io, socket, userId, name }) {
     const message = {
       senderId: userId,
       senderName: name,
-      content: content.trim(),
+      content: normalizedContent,
     };
 
     room.messages.push(message);
     io.to(normalizedRoomId).emit("RECEIVE_ROOM_MESSAGE", message);
-  });
+  }
+
+  socket.on("CREATE_ROOM", createRoom);
+  socket.on("GET_MY_ROOMS", getMyRooms);
+  socket.on("JOIN_ROOM", joinRoom);
+  socket.on("DELETE_ROOM", deleteRoom);
+  socket.on("LEAVE_ROOM", removeUserFromRoom);
+  socket.on("SEND_ROOM_MESSAGE", sendRoomMessage);
 
   return removeUserFromRoom;
 }

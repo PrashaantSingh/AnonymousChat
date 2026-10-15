@@ -13,6 +13,11 @@ h1 {
   color: rgb(240, 226, 247);
 }
 
+.pixel-panel {
+  border: 2px solid black;
+  box-shadow: 6px 6px 0 0 #000;
+}
+
 @theme {
   --color-lightdark: rgb(240, 226, 247);
 }

@@ -3,9 +3,10 @@ import createSocketConnection from "../socket";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { adjectives, nouns } from "../userNameData";
 
-function generateUser(adjectives, nouns) {
-  const name1 = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const name2 = nouns[Math.floor(Math.random() * nouns.length)];
+function generateUser(adjectiveOptions, nounOptions) {
+  const name1 =
+    adjectiveOptions[Math.floor(Math.random() * adjectiveOptions.length)];
+  const name2 = nounOptions[Math.floor(Math.random() * nounOptions.length)];
   const number = Math.floor(100 + Math.random() * 900);
 
   return {

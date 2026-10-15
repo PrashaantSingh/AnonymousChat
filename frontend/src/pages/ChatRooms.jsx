@@ -123,34 +123,30 @@ export default function ChatRooms() {
         {ownedRooms.length !== 0 && (
           <section className="mb-6 mt-6 pb-5">
             <h2 className="font-bold text-lg mb-3">YOUR LIVE ROOMS</h2>
-            {ownedRooms.length === 0 ? (
-              <p className="text-slate-400">You do not have any live rooms.</p>
-            ) : (
-              <div className="space-y-2">
-                {ownedRooms.map((room) => (
-                  <div
-                    key={room.roomId}
-                    className="border-2 border-black bg-slate-950 p-3 flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-bold truncate">{room.name}</p>
-                      <p className="text-xs text-slate-500 truncate">
-                        {room.roomId}
-                      </p>
-                    </div>
-                    <span className="text-green-400 flex items-center gap-1 text-sm">
-                      <Users size={15} /> {room.memberCount}
-                    </span>
-                    <PixelButton
-                      onClick={() => joinOwnedRoom(room.roomId)}
-                      className="bg-indigo-700 text-white px-3 py-1.5 flex gap-2 items-center cursor-pointer"
-                    >
-                      <DoorOpen size={16} /> JOIN
-                    </PixelButton>
+            <div className="space-y-2">
+              {ownedRooms.map((room) => (
+                <div
+                  key={room.roomId}
+                  className="border-2 border-black bg-slate-950 p-3 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-bold truncate">{room.name}</p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {room.roomId}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
+                  <span className="text-green-400 flex items-center gap-1 text-sm">
+                    <Users size={15} /> {room.memberCount}
+                  </span>
+                  <PixelButton
+                    onClick={() => joinOwnedRoom(room.roomId)}
+                    className="bg-indigo-700 text-white px-3 py-1.5 flex gap-2 items-center cursor-pointer"
+                  >
+                    <DoorOpen size={16} /> JOIN
+                  </PixelButton>
+                </div>
+              ))}
+            </div>
           </section>
         )}
       </main>
